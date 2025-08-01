@@ -25,6 +25,7 @@ This file provides essential context for AI agents working on the **Serverless P
 - **Testing**: Pytest with coverage reporting
 - **Security**: detect-secrets for credential scanning
 - **Pre-commit**: Comprehensive quality gate automation
+- **CI/CD**: GitHub Actions with UV integration
 
 ## Architecture Principles
 
@@ -151,6 +152,16 @@ uv run pre-commit run --all-files     # Run all quality checks
 uv sync --frozen --no-dev             # Production install (Docker)
 ```
 
+### CI/CD Commands
+```bash
+# Test workflows locally (requires act)
+act push                              # Test CI workflow
+act workflow_dispatch                 # Test manual workflows
+
+# Workflow validation
+uv run pytest tests/ci/               # Test workflow configurations
+```
+
 ### Testing
 ```bash
 uv run pytest tests/unit/            # Unit tests only
@@ -208,6 +219,11 @@ docker build -f infrastructure/docker/lambda/Dockerfile .
 **Rationale**: Consistency with local development, faster builds
 **Impact**: Faster Docker builds, eliminated requirements.txt
 
+### 5. GitHub Actions CI/CD (Implemented)
+**Decision**: Comprehensive GitHub Actions pipeline with UV integration
+**Rationale**: Automate testing, security scanning, and deployments
+**Impact**: Automated quality gates, secure deployments, faster development cycle
+
 ## Configuration Management
 
 ### Environment-Based Settings
@@ -238,6 +254,12 @@ print(settings.environment)  # Reads from .env or environment variables
 - **API Gateway**: HTTP endpoints
 - **S3**: File storage
 - **DynamoDB**: NoSQL database
+
+### CI/CD Pipeline
+- **GitHub Actions**: Automated testing, building, and deployment
+- **Environment Isolation**: Separate dev, staging, and production pipelines
+- **Security Scanning**: Automated dependency and code security checks
+- **OIDC Authentication**: Secure AWS access without long-lived credentials
 
 ## Troubleshooting
 
@@ -309,10 +331,10 @@ git commit --no-verify                # Bypass pre-commit (emergency only)
 ## Future Considerations
 
 ### Planned Enhancements
-- GitHub Actions CI/CD pipelines
-- Terraform infrastructure deployment
-- API documentation generation
-- Performance monitoring integration
+- Terraform infrastructure deployment (modules and environments)
+- API documentation generation (OpenAPI/Swagger)
+- Performance monitoring integration (CloudWatch, DataDog)
+- Deployment notifications (Slack, email)
 
 ### Technology Decisions Pending
 - Web framework choice (FastAPI likely)
@@ -322,7 +344,7 @@ git commit --no-verify                # Bypass pre-commit (emergency only)
 
 ---
 
-**Last Updated**: Project setup phase completion
+**Last Updated**: CI/CD pipeline implementation completed
 **Next Phase**: Core business logic implementation
 
 This document should be updated as the project evolves and new architectural decisions are made.

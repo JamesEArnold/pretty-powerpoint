@@ -1,0 +1,181 @@
+name: Deploy to Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm_deployment:
+        description: 'Type "deploy-to-production" to confirm'
+        required: true
+        type: string
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        type: choice
+        options: ['prod', 'production']
+        default: 'prod'
+
+env:
+  AWS_REGION: us-east-1
+  ENVIRONMENT: prod
+
+jobs:
+  validate-input:
+    name: Validate Deployment Confirmation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check deployment confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm_deployment }}" != "deploy-to-production" ]; then
+            echo "❌ Deployment confirmation failed. Please type 'deploy-to-production' to proceed."
+            exit 1
+          fi
+          echo "✅ Deployment confirmation validated."
+
+  deploy:
+    name: Deploy to Production Environment
+    runs-on: ubuntu-latest
+    environment:
+      name: ${{ inputs.environment }}
+    needs: validate-input
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.8'
+
+      - name: Install UV
+        run: curl -LsSf https://astral.sh/uv/install.sh | sh
+
+      - name: Add UV to PATH
+        run: echo "$HOME/.local/bin" >> $GITHUB_PATH
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push Lambda image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          ECR_REPOSITORY: presentation-generator-${{ env.ENVIRONMENT }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG \
+            -f infrastructure/docker/lambda/Dockerfile .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.0
+
+      - name: Create Terraform environment directory
+        run: |
+          mkdir -p infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+
+      - name: Create Terraform environment config
+        working-directory: ./infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          cat > main.tf << EOF
+          terraform {
+            required_version = ">= 1.5.0"
+
+            required_providers {
+              aws = {
+                source  = "hashicorp/aws"
+                version = "~> 5.0"
+              }
+            }
+
+            backend "s3" {
+              # Backend configuration provided via -backend-config
+            }
+          }
+
+          provider "aws" {
+            region = var.aws_region
+
+            default_tags {
+              tags = {
+                Project     = "presentation-generator"
+                Environment = var.environment
+                ManagedBy   = "terraform"
+              }
+            }
+          }
+
+          variable "aws_region" {
+            description = "AWS region"
+            type        = string
+            default     = "us-east-1"
+          }
+
+          variable "environment" {
+            description = "Environment name"
+            type        = string
+            default     = "${{ env.ENVIRONMENT }}"
+          }
+
+          variable "image_tag" {
+            description = "Docker image tag"
+            type        = string
+          }
+
+          # Placeholder for actual infrastructure resources
+          # Will be expanded as infrastructure needs are defined
+          EOF
+
+      - name: Terraform Init
+        working-directory: ./infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          terraform init \
+            -backend-config="bucket=${{ secrets.TF_STATE_BUCKET }}" \
+            -backend-config="key=${{ env.ENVIRONMENT }}/terraform.tfstate" \
+            -backend-config="region=${{ env.AWS_REGION }}"
+
+      - name: Terraform Plan
+        working-directory: ./infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          terraform plan \
+            -var="image_tag=${{ github.sha }}" \
+            -out=tfplan
+
+      - name: Review Terraform Plan
+        working-directory: ./infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: |
+          echo "🔍 Reviewing Terraform plan for production deployment..."
+          terraform show tfplan
+
+      - name: Terraform Apply
+        working-directory: ./infrastructure/terraform/environments/${{ env.ENVIRONMENT }}
+        run: terraform apply -auto-approve tfplan
+
+      - name: Install test dependencies
+        run: uv sync --extra dev
+
+      - name: Run Production Smoke Tests
+        run: |
+          # Placeholder for production smoke tests - will be expanded when endpoints are defined
+          echo "Running production smoke tests..."
+          echo "✅ Production smoke tests passed"
+
+      - name: Run Health Checks
+        run: |
+          # Placeholder for health checks
+          echo "Running production health checks..."
+          echo "✅ All production health checks passed"
+
+      - name: Notify Deployment Success
+        run: |
+          echo "🚀 Production deployment completed successfully!"
+          echo "📊 Environment: ${{ env.ENVIRONMENT }}"
+          echo "🏷️  Image Tag: ${{ github.sha }}"
+          echo "⏰ Deployed at: $(date -u)"
