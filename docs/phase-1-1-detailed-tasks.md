@@ -13,14 +13,14 @@ Setting up the foundational Git repository with proper configuration ensures con
 
 #### PROJ-001.3 - Create Initial Branch Structure
 **Time**: 15 minutes
-- [ ] Create and checkout `develop` branch
-- [ ] Create and checkout `feature/initial-setup` from develop
-- [ ] Set branch protection rules on GitHub:
-  - Protect `main` branch
-  - Require pull request reviews (minimum 1)
-  - Dismiss stale PR approvals
-  - Require status checks to pass
-  - Include administrators in restrictions
+- [X] Create and checkout `develop` branch
+- [X] Create and checkout `feature/initial-setup` from develop
+- [X] Set branch protection rules on GitHub:
+- [X] Protect `main` branch
+- [X] Require pull request reviews (minimum 1)
+- [X] Dismiss stale PR approvals
+- [X] Require status checks to pass
+- [X] Include administrators in restrictions
 
 #### PROJ-001.4 - Create .gitignore File
 **Time**: 30 minutes
