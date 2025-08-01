@@ -16,3 +16,26 @@ python_version = "3.8"
 warn_return_any = true
 warn_unused_configs = true
 disallow_untyped_defs = true
+
+[project]
+name = "presentation-generator"
+version = "0.1.0"
+description = "Serverless presentation generator"
+requires-python = ">=3.8.1"
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pre-commit==3.5.0",
+    "black==23.12.0",
+    "flake8==7.0.0",
+    "mypy==1.8.0",
+    "pytest==7.4.4",
+    "pytest-cov==4.1.0",
+    "boto3-stubs[essential]==1.34.0",
+    "detect-secrets==1.4.0",
+]
+
+[tool.uv]
+managed = true
+package = false

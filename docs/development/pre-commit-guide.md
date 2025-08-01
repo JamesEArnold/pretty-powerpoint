@@ -4,8 +4,9 @@
 This project uses pre-commit hooks to maintain code quality and prevent common issues from entering the codebase.
 
 ## Setup
-1. Install dev dependencies: `pip install -r requirements-dev.txt`
-2. Install hooks: `pre-commit install`
+1. Install UV: `curl -LsSf https://astral.sh/uv/install.sh | sh` (or `pip install uv`)
+2. Install dev dependencies: `uv pip install -r requirements-dev.txt`
+3. Install hooks: `pre-commit install`
 
 ## Running Manually
 - All files: `pre-commit run --all-files`
@@ -52,10 +53,23 @@ pre-commit install
 Ensure you're using Python 3.8+ as configured in the hooks.
 
 ### Virtual Environment Issues
-Always run pre-commit from within the activated virtual environment:
+With UV, you can create and manage virtual environments more efficiently:
 ```bash
-source venv/bin/activate
+# Create virtual environment with UV
+uv venv
+
+# Activate virtual environment
+source .venv/bin/activate  # Linux/macOS
+# or .venv\Scripts\activate  # Windows
+
+# Install dependencies and run pre-commit
+uv pip install -r requirements-dev.txt
 pre-commit run --all-files
+```
+
+Alternatively, run commands directly with UV without activating the environment:
+```bash
+uv run pre-commit run --all-files
 ```
 
 ### Secrets Detection False Positives
