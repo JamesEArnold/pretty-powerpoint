@@ -22,7 +22,9 @@ name = "presentation-generator"
 version = "0.1.0"
 description = "Serverless presentation generator"
 requires-python = ">=3.8.1"
-dependencies = []
+dependencies = [
+    "pydantic[dotenv]==2.5.3",
+]
 
 [project.optional-dependencies]
 dev = [
