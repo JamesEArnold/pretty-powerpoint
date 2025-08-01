@@ -1,10 +1,16 @@
 FROM public.ecr.aws/lambda/python:3.11
 
-# Copy requirements file
-COPY requirements.txt ${LAMBDA_TASK_ROOT}
+# Install UV
+RUN pip install --no-cache-dir uv
 
-# Install dependencies
-RUN pip install -r requirements.txt
+# Copy project dependency files
+COPY pyproject.toml uv.lock ${LAMBDA_TASK_ROOT}/
+
+# Set working directory
+WORKDIR ${LAMBDA_TASK_ROOT}
+
+# Install dependencies using UV (much faster than pip)
+RUN uv sync --frozen --no-dev
 
 # Copy application code
 COPY src/ ${LAMBDA_TASK_ROOT}/src/
